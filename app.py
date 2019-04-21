@@ -1,4 +1,3 @@
-# pylint: disable=broad-except,invalid-name
 """
     Sample Flask app testing Cassandra connection
 """
@@ -6,9 +5,7 @@ import os
 from datetime import datetime
 from flask import Flask, jsonify, request
 import json
-
 from cassandra.cluster import Cluster
-from cassandra.query import ordered_dict_factory
 
 app = Flask(__name__)
 
@@ -25,7 +22,8 @@ def index():
         return jsonify(message=message, hostname=os.uname()[1],
                        current_time=str(datetime.now())), 500
     session.execute(
-        "CREATE KEYSPACE IF NOT EXISTS pollution WITH replication = {'class':'SimpleStrategy', 'replication_factor' : 3};")
+        "CREATE KEYSPACE IF NOT EXISTS pollution WITH replication = "
+        "{'class':'SimpleStrategy', 'replication_factor' : 3};")
     session.execute("CREATE TABLE IF NOT EXISTS pollution.data("
                     "location text,"
                     "date date,"
@@ -68,17 +66,22 @@ def create():
         message = "%s: %s" % (error.__class__.__name__, str(error))
         return jsonify(message=message, hostname=os.uname()[1],
                        current_time=str(datetime.now())), 500
-    data = request.data
-    data_dict = json.loads(data.decode('utf-8'))
-    date = data_dict['date']
-    time = data_dict['time']
-    location = data_dict['location']
-    if date is None or time is None or location:
+    data_dict = request.args
+    date = data_dict.get('date')
+    time = data_dict.get('time')
+    location = data_dict.get('location')
+    print(date, time, location)
+    if date is None or time is None or location is None:
         return "<html><body><h1>Fields cannot be empty!</h1></body></html>"
     else:
-        columns = str(data_dict.keys()).replace("'", "")[1:-1]
-        values = str(data_dict.values())[1:-1]
-        query = "INSERT INTO plays (" + columns + ") VALUES (" + values + ")"
+        columns, values = '', ''
+        for i in data_dict.keys():
+            columns += str(i) + ', '
+        for i in data_dict.values():
+            values += "'" + str(i) + "'" + ', '
+        values = values[:-2]
+        columns = columns[:-2]
+        query = "INSERT INTO pollution.data (" + columns + ") VALUES (" + values + ")"
         session.execute(query)
         return "<html><body><h1>Success</h1></body></html>"
 

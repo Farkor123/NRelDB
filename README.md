@@ -9,18 +9,20 @@ A sample Python Flask application using Cassandra and Docker containers.
 
 * Docker Compose:
 
-	`docker-compose up`
+    `cd /pathto/NRelDB`
+    
+	`sudo docker-compose up`
 
 * Verify:
 
-	`chrome 0.0.0.0:8000/test`
+	`chrome 0.0.0.0:5000`
 
 ## Development Configuration:
 -------------------------
 
 * Cassandra Docker container:
 
-	`docker run -d --name flask_cassandra -p 9042:9042 -t cassandra:3.11.4`
+	`sudo docker run -d --name flask_cassandra -p 9042:9042 -t cassandra:3.11.4`
 
 * Python Virtualenv:
 
