@@ -20,7 +20,7 @@ A sample Python Flask application using Cassandra and Docker containers.
 
 * Cassandra Docker container:
 
-	`docker run -d --name flask_cassandra -p 9042:9042 -t cassandra:2.2.0`
+	`docker run -d --name flask_cassandra -p 9042:9042 -t cassandra:3.11.4`
 
 * Python Virtualenv:
 
