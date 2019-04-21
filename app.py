@@ -94,6 +94,23 @@ def read():
         message = "%s: %s" % (error.__class__.__name__, str(error))
         return jsonify(message=message, hostname=os.uname()[1],
                        current_time=str(datetime.now())), 500
+    data_dict = request.args
+    date = data_dict.get('date')
+    time = data_dict.get('time')
+    location = data_dict.get('location')
+    print(date, time, location)
+    if date is None or time is None or location is None:
+        return "<html><body><h1>Fields cannot be empty!</h1></body></html>"
+    else:
+        query = "SELECT * FROM pollution.data " \
+                "WHERE date = '" + date + "' " \
+                "AND time = '" + time + "' " \
+                "AND location = '" + location + "';"
+        ret = ""
+        for i in session.execute(query):
+            for j in i:
+                ret += str(j) + ', '
+        return ret[:-2]
 
 
 @app.route('/crud', methods=['PUT'])
