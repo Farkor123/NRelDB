@@ -28,17 +28,17 @@ def index():
                     "location text,"
                     "date date,"
                     "time time,"
-                    "carbon_oxide double,"
-                    "tin_oxide double,"
-                    "nmhc double,"
-                    "benzene double,"
-                    "titania double,"
-                    "nox double,"
-                    "tungsten_oxide double,"
-                    "indium_oxide double,"
-                    "temperature double,"
-                    "relative_humidity double,"
-                    "absolute_humidity double,"
+                    "carbon_oxide text,"
+                    "tin_oxide text,"
+                    "nmhc text,"
+                    "benzene text,"
+                    "titania text,"
+                    "nox text,"
+                    "tungsten_oxide text,"
+                    "indium_oxide text,"
+                    "temperature text,"
+                    "relative_humidity text,"
+                    "absolute_humidity text,"
                     "PRIMARY KEY (location, date, time)"
                     ")")
     session.execute("INSERT INTO pollution.data(location, date, time) "
@@ -99,8 +99,8 @@ def read():
         ret = ', '.join(str(j) for j in [i for i in session.execute(
             "SELECT * FROM pollution.data WHERE " \
             "date = '" + date + "' AND " \
-                                "time = '" + time + "' AND " \
-                                                    "location = '" + location + "';"
+            "time = '" + time + "' AND " \
+            "location = '" + location + "';"
         )])
         return ret[4:-1]
 
@@ -113,6 +113,22 @@ def update():
         message = "%s: %s" % (error.__class__.__name__, str(error))
         return jsonify(message=message, hostname=os.uname()[1],
                        current_time=str(datetime.now())), 500
+    data_dict = request.args
+    date = data_dict.get('date')
+    time = data_dict.get('time')
+    location = data_dict.get('location')
+    if date is None or time is None or location is None:
+        return "<html><body><h1>Fields cannot be empty!</h1></body></html>"
+    else:
+        xD = ""
+        for _ in list(zip([i for i in data_dict.keys()][3:], [i for i in data_dict.values()][3:])):
+            xD += " = '".join(__ for __ in _) + "', "
+        session.execute("UPDATE pollution.data SET " +\
+            xD[:-2] +\
+            " WHERE location = '" + location + "' AND " \
+            "date = '" + date + "' AND " \
+            "time = '" + time + "';")
+        return 'Updated'
 
 
 @app.route('/crud', methods=['DELETE'])
