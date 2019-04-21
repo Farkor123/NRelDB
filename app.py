@@ -67,21 +67,16 @@ def create():
         return jsonify(message=message, hostname=os.uname()[1],
                        current_time=str(datetime.now())), 500
     data_dict = request.args
-    date = data_dict.get('date')
-    time = data_dict.get('time')
-    location = data_dict.get('location')
-    print(date, time, location)
-    if date is None or time is None or location is None:
+    if data_dict.get('date') is None \
+            or data_dict.get('time') is None \
+            or data_dict.get('location') is None:
         return "<html><body><h1>Fields cannot be empty!</h1></body></html>"
     else:
-        columns, values = '', ''
-        for i in data_dict.keys():
-            columns += str(i) + ', '
-        for i in data_dict.values():
-            values += "'" + str(i) + "'" + ', '
-        values = values[:-2]
-        columns = columns[:-2]
-        query = "INSERT INTO pollution.data (" + columns + ") VALUES (" + values + ")"
+        query = "INSERT INTO pollution.data (" + \
+                ', '.join(str(i) for i in data_dict.keys()) + \
+                ") VALUES (" + \
+                ', '.join("'" + str(i) + "'" for i in data_dict.values()) + \
+                ")"
         session.execute(query)
         return "<html><body><h1>Success</h1></body></html>"
 
@@ -98,19 +93,16 @@ def read():
     date = data_dict.get('date')
     time = data_dict.get('time')
     location = data_dict.get('location')
-    print(date, time, location)
     if date is None or time is None or location is None:
         return "<html><body><h1>Fields cannot be empty!</h1></body></html>"
     else:
-        query = "SELECT * FROM pollution.data " \
-                "WHERE date = '" + date + "' " \
-                "AND time = '" + time + "' " \
-                "AND location = '" + location + "';"
-        ret = ""
-        for i in session.execute(query):
-            for j in i:
-                ret += str(j) + ', '
-        return ret[:-2]
+        ret = ', '.join(str(j) for j in [i for i in session.execute(
+            "SELECT * FROM pollution.data WHERE " \
+            "date = '" + date + "' AND " \
+                                "time = '" + time + "' AND " \
+                                                    "location = '" + location + "';"
+        )])
+        return ret[4:-1]
 
 
 @app.route('/crud', methods=['PUT'])
