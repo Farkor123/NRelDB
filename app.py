@@ -4,7 +4,6 @@
 import os
 from datetime import datetime
 from flask import Flask, jsonify, request
-import json
 from cassandra.cluster import Cluster
 
 app = Flask(__name__)
@@ -13,7 +12,7 @@ cluster = Cluster([os.environ.get('CASSANDRA_PORT_9042_TCP_ADDR', 'localhost')],
                   port=int(os.environ.get('CASSANDRA_PORT_9042_TCP_PORT', 9042)))
 
 
-@app.route('/')
+@app.route('/', methods=['GET'])
 def index():
     try:
         session = cluster.connect()
@@ -46,7 +45,7 @@ def index():
     return 'Hello World'
 
 
-@app.route('/end')
+@app.route('/end', methods=['GET'])
 def end():
     try:
         session = cluster.connect()
@@ -67,9 +66,10 @@ def create():
         return jsonify(message=message, hostname=os.uname()[1],
                        current_time=str(datetime.now())), 500
     data_dict = request.args
-    if data_dict.get('date') is None \
-            or data_dict.get('time') is None \
-            or data_dict.get('location') is None:
+    date = data_dict.get('date')
+    time = data_dict.get('time')
+    location = data_dict.get('location')
+    if date is None or time is None or location is None:
         return "<html><body><h1>Fields cannot be empty!</h1></body></html>"
     else:
         query = "INSERT INTO pollution.data (" + \
@@ -78,7 +78,13 @@ def create():
                 ', '.join("'" + str(i) + "'" for i in data_dict.values()) + \
                 ")"
         session.execute(query)
-        return "<html><body><h1>Success</h1></body></html>"
+        ret = ', '.join(str(j) for j in [i for i in session.execute(
+            "SELECT * FROM pollution.data WHERE " \
+            "date = '" + date + "' AND " \
+                                "time = '" + time + "' AND " \
+                                                    "location = '" + location + "';"
+        )])
+        return ret[4:-1]
 
 
 @app.route('/crud', methods=['GET'])
@@ -100,8 +106,7 @@ def read():
             "SELECT * FROM pollution.data WHERE " \
             "date = '" + date + "' AND " \
             "time = '" + time + "' AND " \
-            "location = '" + location + "';"
-        )])
+            "location = '" + location + "';")])
         return ret[4:-1]
 
 
@@ -123,12 +128,17 @@ def update():
         xD = ""
         for _ in list(zip([i for i in data_dict.keys()][3:], [i for i in data_dict.values()][3:])):
             xD += " = '".join(__ for __ in _) + "', "
-        session.execute("UPDATE pollution.data SET " +\
-            xD[:-2] +\
-            " WHERE location = '" + location + "' AND " \
+        session.execute("UPDATE pollution.data SET " + \
+                        xD[:-2] + \
+                        " WHERE location = '" + location + "' AND " \
+                                                           "date = '" + date + "' AND " \
+                                                                               "time = '" + time + "';")
+        ret = ', '.join(str(j) for j in [i for i in session.execute(
+            "SELECT * FROM pollution.data WHERE " \
             "date = '" + date + "' AND " \
-            "time = '" + time + "';")
-        return 'Updated'
+            "time = '" + time + "' AND " \
+            "location = '" + location + "';")])
+        return ret[4:-1]
 
 
 @app.route('/crud', methods=['DELETE'])
@@ -150,7 +160,12 @@ def delete():
                         "date = '" + date + "' AND "
                         "time = '" + time + "' AND "
                         "location = '" + location + "';")
-        return 'Deleted'
+        ret = ', '.join(str(j) for j in [i for i in session.execute(
+            "SELECT * FROM pollution.data WHERE " \
+            "date = '" + date + "' AND " \
+            "time = '" + time + "' AND " \
+            "location = '" + location + "';")])
+        return ret[4:-1]
 
 
 if __name__ == '__main__':
