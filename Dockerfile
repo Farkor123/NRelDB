@@ -14,7 +14,7 @@ ADD requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
 ## run the app
-ADD app.py app.py
+ADD main.py app.py
 
 ## expose the port
 EXPOSE 5000

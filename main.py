@@ -8,8 +8,7 @@ from cassandra.cluster import Cluster
 
 app = Flask(__name__)
 
-cluster = Cluster([os.environ.get('CASSANDRA_PORT_9042_TCP_ADDR', 'localhost')],
-                  port=int(os.environ.get('CASSANDRA_PORT_9042_TCP_PORT', 9042)))
+cluster = Cluster(['172.18.0.3'], port=9042)
 
 
 @app.route('/', methods=['GET'])
@@ -22,7 +21,7 @@ def index():
                        current_time=str(datetime.now())), 500
     session.execute(
         "CREATE KEYSPACE IF NOT EXISTS pollution WITH replication = "
-        "{'class':'SimpleStrategy', 'replication_factor' : 3};")
+        "{'class':'SimpleStrategy', 'replication_factor' : 2};")
     session.execute("CREATE TABLE IF NOT EXISTS pollution.data("
                     "location text,"
                     "date date,"
@@ -78,13 +77,11 @@ def create():
                 ', '.join("'" + str(i) + "'" for i in data_dict.values()) + \
                 ")"
         session.execute(query)
-        ret = ', '.join(str(j) for j in [i for i in session.execute(
-            "SELECT * FROM pollution.data WHERE " \
-            "date = '" + date + "' AND " \
-                                "time = '" + time + "' AND " \
-                                                    "location = '" + location + "';"
-        )])
-        return ret[4:-1]
+        return ', '.join(str(j) for j in [i for i in session.execute(
+            "SELECT * FROM pollution.data WHERE "
+            "date = '" + date + "' AND "
+            "time = '" + time + "' AND "
+            "location = '" + location + "';")])[4:-1]
 
 
 @app.route('/crud', methods=['GET'])
@@ -102,12 +99,11 @@ def read():
     if date is None or time is None or location is None:
         return "<html><body><h1>Fields cannot be empty!</h1></body></html>"
     else:
-        ret = ', '.join(str(j) for j in [i for i in session.execute(
-            "SELECT * FROM pollution.data WHERE " \
-            "date = '" + date + "' AND " \
-            "time = '" + time + "' AND " \
-            "location = '" + location + "';")])
-        return ret[4:-1]
+        return ', '.join(str(j) for j in [i for i in session.execute(
+            "SELECT * FROM pollution.data WHERE "
+            "date = '" + date + "' AND "
+            "time = '" + time + "' AND "
+            "location = '" + location + "';")])[4:-1]
 
 
 @app.route('/crud', methods=['PUT'])
@@ -128,17 +124,15 @@ def update():
         xD = ""
         for _ in list(zip([i for i in data_dict.keys()][3:], [i for i in data_dict.values()][3:])):
             xD += " = '".join(__ for __ in _) + "', "
-        session.execute("UPDATE pollution.data SET " + \
-                        xD[:-2] + \
-                        " WHERE location = '" + location + "' AND " \
-                                                           "date = '" + date + "' AND " \
-                                                                               "time = '" + time + "';")
-        ret = ', '.join(str(j) for j in [i for i in session.execute(
-            "SELECT * FROM pollution.data WHERE " \
-            "date = '" + date + "' AND " \
-            "time = '" + time + "' AND " \
-            "location = '" + location + "';")])
-        return ret[4:-1]
+        session.execute("UPDATE pollution.data SET " + xD[:-2] + " WHERE " \
+                        "location = '" + location + "' AND " \
+                        "date = '" + date + "' AND " \
+                        "time = '" + time + "';")
+        return ', '.join(str(j) for j in [i for i in session.execute(
+            "SELECT * FROM pollution.data WHERE "
+            "date = '" + date + "' AND "
+            "time = '" + time + "' AND "
+            "location = '" + location + "';")])[4:-1]
 
 
 @app.route('/crud', methods=['DELETE'])
@@ -160,14 +154,13 @@ def delete():
                         "date = '" + date + "' AND "
                         "time = '" + time + "' AND "
                         "location = '" + location + "';")
-        ret = ', '.join(str(j) for j in [i for i in session.execute(
-            "SELECT * FROM pollution.data WHERE " \
-            "date = '" + date + "' AND " \
-            "time = '" + time + "' AND " \
-            "location = '" + location + "';")])
-        return ret[4:-1]
+        return ', '.join(str(j) for j in [i for i in session.execute(
+            "SELECT * FROM pollution.data WHERE "
+            "date = '" + date + "' AND "
+            "time = '" + time + "' AND "
+            "location = '" + location + "';")])[4:-1]
 
 
 if __name__ == '__main__':
-    # Connect via 0.0.0.0:8000
+    print('DUPA')
     app.run(host='0.0.0.0', debug=True)
